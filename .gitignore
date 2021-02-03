@@ -77,8 +77,8 @@ buildNumber.properties
 # .idea/modules.xml
 # .idea/*.iml
 # .idea/modules
-# *.iml
-# *.ipr
+*.iml
+*.ipr
 
 # CMake
 cmake-build-*/

@@ -19,7 +19,8 @@ public class Reserve {
     public void onPostPersist(){
         Subscribed subscribed = new Subscribed();
         BeanUtils.copyProperties(this, subscribed);
-        subscribed.setStatus("Booking");
+        // subscribed.setStatus("Booking");
+        subscribed.setStatus("Process in " + System.getenv("STATUS")); //
         subscribed.publishAfterCommit();
 
 
