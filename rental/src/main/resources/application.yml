@@ -68,5 +68,5 @@ spring:
           contentType: application/json
 
 api:
-  return:
+  system:
     url: http://system:8080
