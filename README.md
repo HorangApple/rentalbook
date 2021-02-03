@@ -2,57 +2,57 @@
 
 # 서비스 시나리오
 ## 기능적 요구사항
-1. 회원이 레시피를 검색한다.
-1. 회원이 검색된 내용을 보고 부족한 재료를 주문한다.
-1. 주문이 되면 주문 내역에 대한 배송이 시작된다.
-1. 배송 정보는 주문 정보에 업데이트 된다.
-1. 고객이 주문을 취소할 수 있다.
-1. 주문이 취소되면 배송도 취소된다.
-1. 고객이 주문상태를 중간중간 조회한다.
+1. 회원이 책을 예약한다.
+1. 회원이 예약한 책에 대해 대여를 시도한다.
+1. 대여, 예약 시스템은 책을 예약한 이력이 있는지 확인한다.
+1. 예약한 사람이면 책을 대여해준다.
+1. 예약한 사람이 아니면 대여를 할 수 없다.
+1. 회원이 대여한 책을 반납한다.
 
 ## 비기능적 요구사항
 1. 트랜잭션
-    1. 고객이 주문을 취소하면 주문도 즉시 주문이 취소된다. → Sync 호출
+    1. 회원이 반납을 시도하면 즉시 반납이 되도록 한다. → Sync 호출
 1. 장애격리
-    1. 배송 서비스가 정상 기능이 되지 않더라도 주문을 받을 수 있다. → Async (event-driven), Eventual Consistency
-    1. 주문시스템이 과중되면 사용자를 잠시동안 받지 않고 주문을 잠시후에 하도록 유도한다 → Circuit breaker, fallback
+    1. 도서 관리 시스템이 정상 기능을 하지 않더라도 대여 받을 수 있다. → Async (event-driven), Eventual Consistency
+    1. 대여, 예약 시스템이 과중되면 사용자를 잠시동안 받지 않고 잠시후에 하도록 유도한다 → Circuit breaker, fallback
 1. 성능
-    1. 고객이 배달상태를 주문시스템에서 확인할 수 있어야 한다. → CQRS 
+    1. 회원이 대여 진행도를 My Page에서 확인할 수 있어야 한다. → CQRS 
 
 # 체크포인트
 https://workflowy.com/s/assessment/qJn45fBdVZn4atl3
 
-# 분석/설계
-## AS-IS 조직 (Horizontally-Aligned)  
-![image](https://user-images.githubusercontent.com/16534043/106468971-f7a2e880-64e1-11eb-9e3e-faf334166094.png)
-## TO-BE 조직 (Vertically-Aligned)  
-![image](https://user-images.githubusercontent.com/16534043/106469623-de4e6c00-64e2-11eb-9c5d-bd3d43fa6340.png)
 ## EventStorming 결과
 ### 완성된 1차 모형  
-![image](https://user-images.githubusercontent.com/12531980/106534309-28f9d380-6537-11eb-878b-ae136d43cdcc.png)
+
+![image](https://user-images.githubusercontent.com/12531980/106765256-f3aace00-667b-11eb-9428-81b8918d5af5.png)
 
 ### 1차 완성본에 대한 기능적/비기능적 요구사항을 커버하는지 검증  
-![image](https://user-images.githubusercontent.com/12531980/106551677-18f2eb80-6559-11eb-907a-7da3b69ce975.png)
+
+![image](https://user-images.githubusercontent.com/12531980/106766497-4638ba00-667d-11eb-86bc-529aeda72596.png)
+
 ```
-- 고객이 등록한 레시피를 확인한다. (1, ok)
-- 레시피를 등록하면 필요한 재료가 주문이 된다. (2 -> 3, ok)
-- 주문 접수가 되면 배송이 되고 주문 상태가 '배송 시작'으로 변경된다. (3 -> 4, ok)
-- 고객이 주문 취소를 하게 되면 배달이 취소된다. (5 -> 6, ok)
-- 고객은 중간마다 주문상태를 My Page 를 통해 확인 할 수 있다. (7, ok)
+- 회원이 책을 예약한다. (1 -> 2, ok)
+- 회원이 예약한 책에 대해 대여를 시도한다. (3, ok)
+- 대여, 예약 시스템은 책을 예약한 이력이 있는지 확인한다. 
+  - 예약한 사람이면 책을 대여해준다. (3 -> 4 -> 5, ok)
+  - 예약한 사람이 아니면 대여를 할 수 없다. (3 -> 4, ok)
+- 회원이 대여한 책을 반납한다. (6 -> 7 -> 8, ok)
+- 회원은 대여 진행도를 My page 를 통해 볼 수 있다. (9, ok)
 ```
 ## 헥사고날 아키텍쳐 다이어그램 도출 (Polyglot)  
-![image](https://user-images.githubusercontent.com/12531980/106552529-dd592100-655a-11eb-9d86-dbb94faebe62.png)
+
+![image](https://user-images.githubusercontent.com/12531980/106765839-92372f00-667c-11eb-8ef6-651853fd779a.png)
 
 # 구현
 분석/설계 단계에서 도출된 헥사고날 아키텍처에 따라, 각 BC별로 대변되는 마이크로 서비스들을 스프링부트로 구현하였다. 구현한 각 서비스를 로컬에서 실행하는 방법은 아래와 같다 (각자의 포트넘버는 8081 ~ 8084, 8088 이다)
 ```
-cd recipe
+cd rental
 mvn spring-boot:run  
 
-cd order
+cd book
 mvn spring-boot:run
 
-cd delivery
+cd system
 mvn spring-boot:run 
 
 cd mypage
@@ -67,55 +67,41 @@ msaez.io 를 통해 구현한 Aggregate 단위로 Entity 를 선언 후, 구현�
 
 Entity Pattern 과 Repository Pattern 을 적용하기 위해 Spring Data REST 의 RestRepository 를 적용하였다.
 
+**system 서비스의 Reserve.java**
+
 ```java
-package searchrecipe;
+package rentalbook;
 
 import javax.persistence.*;
 import org.springframework.beans.BeanUtils;
 import java.util.List;
 
 @Entity
-@Table(name="Order_table")
-public class Order {
+@Table(name="Reserve_table")
+public class Reserve {
 
     @Id
     @GeneratedValue(strategy=GenerationType.AUTO)
     private Long id;
-    private String materialNm;
-    private Integer qty;
-    private String status;
+    private String userNm;
+    private Long bookId;
+    private String bookNm;
 
     @PostPersist
     public void onPostPersist(){
-        Ordered ordered = new Ordered();
-        BeanUtils.copyProperties(this, ordered);
-        ordered.publishAfterCommit();
-    }
-
-    @PrePersist
-    public void onPrePersist(){
-        try {
-            Thread.currentThread().sleep((long) (800 + Math.random() * 220));
-        } catch (InterruptedException e) {
-            e.printStackTrace();
-        }
+        Subscribed subscribed = new Subscribed();
+        BeanUtils.copyProperties(this, subscribed);
+        subscribed.setStatus("Booking");
+        // subscribed.setStatus("Process in " + System.getenv("STATUS"));
+        subscribed.publishAfterCommit();
     }
 
     @PreRemove
     public void onPreRemove(){
-        OrderCanceled orderCanceled = new OrderCanceled();
-        BeanUtils.copyProperties(this, orderCanceled);
-        orderCanceled.publishAfterCommit();
-
-        //Following code causes dependency to external APIs
-        // it is NOT A GOOD PRACTICE. instead, Event-Policy mapping is recommended.
-
-        searchrecipe.external.Cancellation cancellation = new searchrecipe.external.Cancellation();
-        // mappings goes here
-        cancellation.setOrderId(this.getId());
-        cancellation.setStatus("Delivery Cancelled");
-        OrderApplication.applicationContext.getBean(searchrecipe.external.CancellationService.class)
-            .cancel(cancellation);
+        Checked checked = new Checked();
+        BeanUtils.copyProperties(this, checked);
+        checked.setStatus("On rental");
+        checked.publishAfterCommit();
 
     }
 
@@ -127,39 +113,90 @@ public class Order {
     public void setId(Long id) {
         this.id = id;
     }
-    public String getMaterialNm() {
-        return materialNm;
+    public String getUserNm() {
+        return userNm;
     }
 
-    public void setMaterialNm(String materialNm) {
-        this.materialNm = materialNm;
+    public void setUserNm(String userNm) {
+        this.userNm = userNm;
     }
-    public Integer getQty() {
-        return qty;
-    }
-
-    public void setQty(Integer qty) {
-        this.qty = qty;
-    }
-    public String getStatus() {
-        return status;
+    public Long getBookId() {
+        return bookId;
     }
 
-    public void setStatus(String status) {
-        this.status = status;
+    public void setBookId(Long bookId) {
+        this.bookId = bookId;
+    }
+    public String getBookNm() {
+        return bookNm;
+    }
+
+    public void setBookNm(String bookNm) {
+        this.bookNm = bookNm;
     }
 
 }
-
 ```
 
+**system 서비스의 PolicyHandler.java**
+
+```java
+package rentalbook;
+
+import org.springframework.beans.BeanUtils;
+import rentalbook.config.kafka.KafkaProcessor;
+import com.fasterxml.jackson.databind.DeserializationFeature;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.cloud.stream.annotation.StreamListener;
+import org.springframework.messaging.handler.annotation.Payload;
+import org.springframework.stereotype.Service;
+
+import java.util.List;
+import java.util.Optional;
+
+@Service
+public class PolicyHandler{
+    @StreamListener(KafkaProcessor.INPUT)
+    public void onStringEventListener(@Payload String eventString){
+
+    }
+
+    @Autowired
+    ReserveRepository reserveRepository;
+
+    @StreamListener(KafkaProcessor.INPUT)
+    public void wheneverRentaled_Check(@Payload Rentaled rentaled){
+
+        if(rentaled.isMe()){
+            System.out.println("##### listener  : " + rentaled.toJson());
+            List<Reserve> reserveList = reserveRepository.findByBookIdOrBookNm(rentaled.getBookId(),rentaled.getBookNm());
+            if(reserveList.size()>0) {
+                for (Reserve reserve : reserveList) {
+                    if (reserve.getUserNm().equals(rentaled.getUserNm())) {
+                        System.out.println("Confirmed Reservation");
+                        reserveRepository.deleteById(reserve.getId());
+                    }
+                }
+            }
+        }
+    }
+}
+```
+
+
+
 - 적용 후 REST API의 테스트를 통하여 정상적으로 동작하는 것을 확인할 수 있었다.  
-  - 주문 수행 (MaterialOrdered)
+  
+- 예약 (Subscribed) 수행 후 결과
+  
 
-  ![image](https://user-images.githubusercontent.com/12531980/106535000-9c501500-6538-11eb-89be-f5c1078ad4c3.png)
+![image001](https://user-images.githubusercontent.com/12531980/106761096-d411a680-6677-11eb-9187-c7127a01bd95.png)
 
-  - 주문 목록 조회
-  ![image](https://user-images.githubusercontent.com/12531980/106535116-d6b9b200-6538-11eb-8498-46b2d9398b79.png)
+
+- 책 대여 (Rentaled) 수행 후 결과
+
+![image002](https://user-images.githubusercontent.com/12531980/106761280-015e5480-6678-11eb-9434-4412310df9b4.png)
 
 ## Gateway 적용
 API Gateway를 통하여 마이크로 서비스들의 진입점을 통일하였다.
@@ -174,18 +211,18 @@ spring:
   cloud:
     gateway:
       routes:
-        - id: recipe
+        - id: rental
           uri: http://localhost:8081
           predicates:
-            - Path=/recipes/** 
-        - id: order
+            - Path=/rentals/** 
+        - id: system
           uri: http://localhost:8082
           predicates:
-            - Path=/orders/** 
-        - id: delivery
+            - Path=/reserves/**,/returns/**
+        - id: book
           uri: http://localhost:8083
           predicates:
-            - Path=/deliveries/**,/cancellations/**
+            - Path=/books/** 
         - id: mypage
           uri: http://localhost:8084
           predicates:
@@ -209,18 +246,18 @@ spring:
   cloud:
     gateway:
       routes:
-        - id: recipe
-          uri: http://recipe:8080
+        - id: rental
+          uri: http://rental:8080
           predicates:
-            - Path=/recipes/** 
-        - id: order
-          uri: http://order:8080
+            - Path=/rentals/** 
+        - id: system
+          uri: http://system:8080
           predicates:
-            - Path=/orders/** 
-        - id: delivery
-          uri: http://delivery:8080
+            - Path=/reserves/**,/returns/**
+        - id: book
+          uri: http://book:8080
           predicates:
-            - Path=/deliveries/**,/cancellations/**
+            - Path=/books/** 
         - id: mypage
           uri: http://mypage:8080
           predicates:
@@ -238,26 +275,20 @@ spring:
 
 server:
   port: 8080
-
 ```
 
 
 ## 폴리그랏 퍼시스턴스
-- recipe의 경우, 다른 마이크로 서비스들과 달리 조회 기능도 제공해야 하기에, HSQL을 사용하여 구현하였다. 이를 통해, 마이크로 서비스 간 서로 다른 종류의 데이터베이스를 사용해도 문제 없이 동작하여 폴리그랏 퍼시스턴스를 충족시켰다.
+- retnal 서비스의 경우, 다른 마이크로 서비스들과 달리 조회 기능도 제공해야 하기에, HSQL을 사용하여 구현하였다. 이를 통해, 마이크로 서비스 간 서로 다른 종류의 데이터베이스를 사용해도 문제 없이 동작하여 폴리그랏 퍼시스턴스를 충족시켰다.
 
-  **recipe 서비스의 pom.xml**
+  **rental 서비스의 pom.xml**
 
   ![image](https://user-images.githubusercontent.com/12531980/106535831-70359380-653a-11eb-8e81-1654226aa9e9.png)
 
-
-## 유비쿼터스 랭귀지
-- 조직명, 서비스 명에서 사용되고, 업무현장에서도 쓰이며, 모든 이해관계자들이 직관적으로 의미를 이해할 수 있도록 영어 단어를 사용함 (recipe, order, delivery 등)
-
 ## 동기식 호출(Req/Res 방식)과 Fallback 처리
-- 분석단계에서의 조건 중 하나로 주문 취소(order)와 배송 취소(delivery) 간의 호출은 동기식 일관성을 유지하는 트랜잭션으로 처리하기로 하였다. 호출 프로토콜은 이미 앞서 Rest Repository 에 의해 노출되어있는 REST 서비스를 FeignClient 를 이용하여 호출하도록 한다.
-- 배송 취소 서비스를 호출하기 위하여 FeignClient를 이용하여 Service 대행 인터페이스(Proxy)를 구현
+- rental 서비스의 external/ReturnService.java 내에 반납 서비스를 호출하기 위하여 FeignClient를 이용하여 Service 대행 인터페이스(Proxy)를 구현
 ```java
-package searchrecipe.external;
+package rentalbook.external;
 
 import org.springframework.cloud.openfeign.FeignClient;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -266,40 +297,42 @@ import org.springframework.web.bind.annotation.RequestMethod;
 
 import java.util.Date;
 
-@FeignClient(name="delivery", url="${api.delivery.url}")
-public interface CancellationService {
+@FeignClient(name="system", url="${api.system.url}")
+public interface ReturnService {
 
-    @RequestMapping(method= RequestMethod.POST, path="/cancellations")
-    public void cancel(@RequestBody Cancellation cancellation);
+    @RequestMapping(method= RequestMethod.POST, path="/returns")
+    public void returnBook(@RequestBody Return rtn);
 
 }
 ```
-- 주문이 취소된 직후(@PreRemove) 배송이 취소되도록 처리
+- rental 서비스의 Rental.java 내에 반납 진행 직후 (@PreRemove) 반납되도록 처리
 ```java
 //...
-public class Order {
+public class Rental {
     //...
 
-    @PreRemove
-    public void onPreRemove(){
-        OrderCanceled orderCanceled = new OrderCanceled();
-        BeanUtils.copyProperties(this, orderCanceled);
-        orderCanceled.publishAfterCommit();
+    @PostRemove
+    public void onPostRemove(){
+        Returned returned = new Returned();
+        BeanUtils.copyProperties(this, returned);
+        returned.publishAfterCommit();
 
         //Following code causes dependency to external APIs
         // it is NOT A GOOD PRACTICE. instead, Event-Policy mapping is recommended.
 
-        searchrecipe.external.Cancellation cancellation = new searchrecipe.external.Cancellation();
+        rentalbook.external.Return rtn = new rentalbook.external.Return();
         // mappings goes here
-        cancellation.setOrderId(this.getId());
-        cancellation.setStatus("Delivery Cancelled");
-        OrderApplication.applicationContext.getBean(searchrecipe.external.CancellationService.class)
-            .cancel(cancellation);
+        rtn.setBookId(this.getBookId());
+        rtn.setBookNm(this.getBookNm());
+        rtn.setUserNm(this.getUserNm());
+        rtn.setRentalId(this.getId());
+        RentalApplication.applicationContext.getBean(rentalbook.external.ReturnService.class)
+            .returnBook(rtn);
     }
     //...
 }
 ```
-- 동기식 호출에서는 호출 시간에 따른 타임 커플링이 발생하여, 주문 취소 시스템에 장애가 나면 배송도 취소되지 않는다는 것을 확인
+- 동기식 호출에서는 호출 시간에 따른 타임 커플링이 발생하여, 반납 시스템에 장애가 나면 반납 되지 않는다는 것을 확인
   - 배송(Delivery) 서비스를 잠시 내려놓음 (ctrl+c)  
   ![image](https://user-images.githubusercontent.com/12531980/106551276-425f4780-6558-11eb-87d0-db00d11f70cb.png)
   - 주문 취소(cancel) 요청 및 에러 난 화면 표시  
@@ -308,67 +341,76 @@ public class Order {
   ![image](https://user-images.githubusercontent.com/12531980/106551365-6d499b80-6558-11eb-84b7-b454b1df15c8.png)
 
 ## 비동기식 호출 (Pub/Sub 방식)
-- Recipe.java 내에서 아래와 같이 서비스 Pub 구현
+- system 서비스 내 Reserve.java 에서 아래와 같이 서비스 Pub 구현
 ```java
 //...
-public class Recipe {
+public class Reserve {
 
     @Id
     @GeneratedValue(strategy=GenerationType.AUTO)
     private Long id;
-    private String recipeNm;
-    private String cookingMethod;
-    private String materialNm;
-    private Integer qty;
+    private String userNm;
+    private Long bookId;
+    private String bookNm;
 
     @PostPersist
     public void onPostPersist(){
-        MaterialOrdered materialOrdered = new MaterialOrdered();
-        BeanUtils.copyProperties(this, materialOrdered);
-        materialOrdered.publishAfterCommit();
+        Subscribed subscribed = new Subscribed();
+        BeanUtils.copyProperties(this, subscribed);
+        subscribed.setStatus("Booking");
+        // subscribed.setStatus("Process in " + System.getenv("STATUS"));
+        subscribed.publishAfterCommit();
     }
     //...
 }
 ```
-- Order.java 내 Policy Handler 에서 아래와 같이 Sub 구현
+- book 서비스 내 PolicyHandler.java 에서 아래와 같이 Sub 구현
 ```java
 //...
 @Service
 public class PolicyHandler{
-
+    
     //...
     @Autowired
-    OrderRepository orderRepository;
+    BookRepository bookRepository;
 
-    //...
     @StreamListener(KafkaProcessor.INPUT)
-    public void wheneverMaterialOrdered_Order(@Payload MaterialOrdered materialOrdered){
+    public void wheneverSubscribed_UpdateStatus(@Payload Subscribed subscribed){
 
-        if(materialOrdered.isMe()){
-            System.out.println("##### listener  : " + materialOrdered.toJson());
-            Order order = new Order();
-            order.setMaterialNm(materialOrdered.getMaterialNm());
-            order.setQty(materialOrdered.getQty());
-            order.setStatus("Received Order");
-            orderRepository.save(order);
+        if(subscribed.isMe()){
+            System.out.println("##### listener  : " + subscribed.toJson());
+            List<Book> bookList = bookRepository.findByBookNmOrId(subscribed.getBookNm(), subscribed.getBookId());
+            for(Book book : bookList) {
+                book.setStatus("Booking");
+                bookRepository.save(book);
+                System.out.println("##### "+book.getBookNm()+" is reserved");
+            }
         }
     }
+    //...
 }
 ```
-- 비동기식 호출은 다른 서비스가 비정상이여도 이상없이 동작가능하여, 주문 서비스에 장애가 나도 레시피 서비스는 정상 동작을 확인
-  - Recipe 서비스와 Order 서비스가 둘 다 동시에 돌아가고 있을때 Recipe 서비스 실행시 이상 없음  
+- 비동기식 호출은 다른 서비스가 비정상이여도 이상없이 동작가능하여, book 서비스에 장애가 나도 system 서비스는 정상 동작을 확인
+  - system 서비스와 book 서비스가 둘 다 동시에 돌아가고 있을때 system 서비스 실행시 이상 없음  
   ![image](https://user-images.githubusercontent.com/12531980/106556204-5f007d00-6562-11eb-8087-e0260a54d7bd.png)
-  - Order 서비스를 내림  
+  - book 서비스를 내림  
   ![image](https://user-images.githubusercontent.com/12531980/106555946-e699bc00-6561-11eb-81de-15ea39698d35.png)  
-  - Recipe 서비스를 실행하여도 이상 없이 동작    
+  - system 서비스를 실행하여도 이상 없이 동작    
   ![image](https://user-images.githubusercontent.com/12531980/106556261-7ccde200-6562-11eb-82d1-cd38eb3075fe.png)
 
 ## CQRS
-viewer를 별도로 구현하여 아래와 같이 view 가 출력된다.
-- MaterialOrdered 수행 후의 mypage  
-![image](https://user-images.githubusercontent.com/12531980/106606835-ecb18c00-65a5-11eb-85fa-9342cc8bef3d.png)
-- OrderCanceled 수행 후의 mypage
-![image](https://user-images.githubusercontent.com/12531980/106606970-17034980-65a6-11eb-91e3-55c4e31a7e36.png)
+viewer 인 mypage 서비스를 별도로 구현하여 아래와 같이 view 가 출력된다.
+- Subscribed 수행 후의 mypage 
+
+![image001](https://user-images.githubusercontent.com/12531980/106761096-d411a680-6677-11eb-9187-c7127a01bd95.png)
+
+- Rentaled 수행 후의 mypage
+
+![image002](https://user-images.githubusercontent.com/12531980/106761280-015e5480-6678-11eb-9434-4412310df9b4.png)
+
+- Returned 수행 후의 mypage
+
+![image003](https://user-images.githubusercontent.com/12531980/106762127-e17b6080-6678-11eb-85a8-9cb55c6793c0.png)
 
 
 # 운영
