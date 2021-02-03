@@ -333,12 +333,12 @@ public class Rental {
 }
 ```
 - 동기식 호출에서는 호출 시간에 따른 타임 커플링이 발생하여, 반납 시스템에 장애가 나면 반납 되지 않는다는 것을 확인
-  - 배송(Delivery) 서비스를 잠시 내려놓음 (ctrl+c)  
-  ![image](https://user-images.githubusercontent.com/12531980/106551276-425f4780-6558-11eb-87d0-db00d11f70cb.png)
-  - 주문 취소(cancel) 요청 및 에러 난 화면 표시  
-  ![image](https://user-images.githubusercontent.com/12531980/106551103-da106600-6557-11eb-8609-4593a0b7d8c2.png)
-  - 배송(Delivery) 서비스 재기동 후 다시 주문 취소 요청  
-  ![image](https://user-images.githubusercontent.com/12531980/106551365-6d499b80-6558-11eb-84b7-b454b1df15c8.png)
+  - system 서비스를 내려놓음  
+  ![image](https://user-images.githubusercontent.com/12531980/106776263-3e7e1300-6687-11eb-815a-694aa26f24e1.png)
+  - 반납 (return) 요청 및 에러 난 화면 표시  
+  ![image](https://user-images.githubusercontent.com/12531980/106776341-535aa680-6687-11eb-82d5-6913f34a6423.png)
+  - system  서비스 재기동 후 다시 반납 요청  
+  ![image](https://user-images.githubusercontent.com/12531980/106776656-a03e7d00-6687-11eb-8cb5-b610c6cbf559.png)
 
 ## 비동기식 호출 (Pub/Sub 방식)
 - system 서비스 내 Reserve.java 에서 아래와 같이 서비스 Pub 구현
@@ -392,11 +392,11 @@ public class PolicyHandler{
 ```
 - 비동기식 호출은 다른 서비스가 비정상이여도 이상없이 동작가능하여, book 서비스에 장애가 나도 system 서비스는 정상 동작을 확인
   - system 서비스와 book 서비스가 둘 다 동시에 돌아가고 있을때 system 서비스 실행시 이상 없음  
-  ![image](https://user-images.githubusercontent.com/12531980/106556204-5f007d00-6562-11eb-8087-e0260a54d7bd.png)
+  ![image](https://user-images.githubusercontent.com/12531980/106774929-fb6f7000-6685-11eb-95af-7c413514d618.png)
   - book 서비스를 내림  
-  ![image](https://user-images.githubusercontent.com/12531980/106555946-e699bc00-6561-11eb-81de-15ea39698d35.png)  
+  ![image](https://user-images.githubusercontent.com/12531980/106774768-cfec8580-6685-11eb-9162-57372f269497.png)  
   - system 서비스를 실행하여도 이상 없이 동작    
-  ![image](https://user-images.githubusercontent.com/12531980/106556261-7ccde200-6562-11eb-82d1-cd38eb3075fe.png)
+  ![image](https://user-images.githubusercontent.com/12531980/106774853-e72b7300-6685-11eb-93c6-535047ec808c.png)
 
 ## CQRS
 viewer 인 mypage 서비스를 별도로 구현하여 아래와 같이 view 가 출력된다.
@@ -517,8 +517,9 @@ siege -c100 -t60S -r10 -v http get http://book:8080/books
 kubectl apply -f deployment_with_readiness.yml
 ```
 - 배포 중 pod가 2개가 뜨고, 새롭게 띄운 pod가 준비될 때까지, 기존 pod가 유지됨을 확인  
-  ![2021-02-03 152954](https://user-images.githubusercontent.com/12531980/106707816-339a9280-6635-11eb-8763-e9292917e135.png)  
+  ![2021-02-03 152954](https://user-images.githubusercontent.com/12531980/106707816-339a9280-6635-11eb-8763-e9292917e135.png)
   ![2021-02-03 153014](https://user-images.githubusercontent.com/12531980/106707844-401eeb00-6635-11eb-8772-abc2b5599fd7.png)
+  
 - siege 가 중단되지 않고, Availability가 높아졌음을 확인하여 무정지 재배포가 됨을 확인함  
   ![2021-02-03 153117](https://user-images.githubusercontent.com/12531980/106707873-48772600-6635-11eb-8240-4a248a928956.png)
 
@@ -632,12 +633,12 @@ kubectl create configmap systemword --from-literal=word=Booking
 - Configmap 생성 확인  
   ![2021-02-03 180849](https://user-images.githubusercontent.com/12531980/106727078-7321a880-664e-11eb-85da-9d5515f55ad5.png)
 
-- 소스 수정에 따른 Docker 이미지 변경이 필요하기에, 기존 Delivery 서비스 삭제
+- 소스 수정에 따른 Docker 이미지 변경이 필요하기에, 기존 system 서비스 삭제
 ```
 kubectl delete pod,deploy,service system
 ```
 
-- Delivery 서비스의 PolicyHandler.java (delivery\src\main\java\searchrecipe) 수정
+- system 서비스의 Reserve.java (system\src\main\java\rentalbook) 수정
 ```
 #22번째 줄을 아래와 같이 수정
 #기존에는 Booking 라는 고정된 값이 출력되었으나, Configmap 에서 가져온 환경변수를 입력받도록 수정
@@ -645,7 +646,7 @@ kubectl delete pod,deploy,service system
 subscribed.setStatus("Process in " + System.getenv("STATUS"));
 ```
 
-- Delivery 서비스의 Deployment.yml 파일에 아래 항목 추가하여 deployment_configmap.yml 생성 (아래 코드와 그림은 동일 내용)
+- system 서비스의 Deployment.yml 파일에 아래 항목 추가하여 deployment_configmap.yml 생성 (아래 코드와 그림은 동일 내용)
 ```
           env:
             - name: STATUS
@@ -657,9 +658,9 @@ subscribed.setStatus("Process in " + System.getenv("STATUS"));
 ```
   ![2021-02-03 181204](https://user-images.githubusercontent.com/12531980/106727115-7d43a700-664e-11eb-9c7a-102db5fde979.png)  
 
-- Docker Image 다시 빌드하고, Repository에 배포하기
+- Docker Image 다시 빌드하고, Repository 에 배포하기
 
-- Kubernetes에서 POD 생성할 때, 설정한 deployment_configmap.yml 파일로 생성하기
+- Kubernetes 에서 POD 생성할 때, 설정한 deployment_config.yml 파일로 생성하기
 ```
 kubectl create -f deployment_config.yml
 ```
