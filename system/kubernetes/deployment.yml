@@ -19,6 +19,12 @@ spec:
           image: username/system:latest
           ports:
             - containerPort: 8080
+          env:
+            - name: STATUS
+              valueFrom:
+                configMapKeyRef:
+                  name: systemword
+                  key: word
           readinessProbe:
             httpGet:
               path: '/actuator/health'

@@ -20,7 +20,7 @@ public class Reserve {
         Subscribed subscribed = new Subscribed();
         BeanUtils.copyProperties(this, subscribed);
         // subscribed.setStatus("Booking");
-        subscribed.setStatus("Process in " + System.getenv("STATUS")); //
+        subscribed.setStatus("Process in " + System.getenv("STATUS"));
         subscribed.publishAfterCommit();
 
 
