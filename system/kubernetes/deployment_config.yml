@@ -16,9 +16,15 @@ spec:
     spec:
       containers:
         - name: system
-          image: username/system:latest
+          image: intensive2021.azurecr.io/system:v3
           ports:
             - containerPort: 8080
+          env:
+            - name: STATUS
+              valueFrom:
+                configMapKeyRef:
+                  name: systemword
+                  key: word
           readinessProbe:
             httpGet:
               path: '/actuator/health'
