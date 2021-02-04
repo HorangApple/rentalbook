@@ -25,8 +25,8 @@ public class Rental {
 
     }
 
-    @PostRemove
-    public void onPostRemove(){
+    @PreRemove
+    public void onPreRemove(){
         Returned returned = new Returned();
         BeanUtils.copyProperties(this, returned);
         returned.publishAfterCommit();
