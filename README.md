@@ -279,7 +279,7 @@ server:
 
 
 ## 폴리그랏 퍼시스턴스
-- retnal 서비스의 경우, 다른 마이크로 서비스들과 달리 조회 기능도 제공해야 하기에, HSQL을 사용하여 구현하였다. 이를 통해, 마이크로 서비스 간 서로 다른 종류의 데이터베이스를 사용해도 문제 없이 동작하여 폴리그랏 퍼시스턴스를 충족시켰다.
+- rental 서비스의 경우, 다른 마이크로 서비스들과 달리 hsql 을 사용하여 구현하였다. 이를 통해, 마이크로 서비스 간 서로 다른 종류의 데이터베이스를 사용해도 문제 없이 동작하여 폴리그랏 퍼시스턴스를 충족시켰다.
 
   **rental 서비스의 pom.xml**
 
@@ -603,7 +603,7 @@ siege -c1000 -t120S -r100 -v --content-type "application/json" 'http://system:80
   ![2021-02-03 162907](https://user-images.githubusercontent.com/12531980/106713642-13230600-663e-11eb-9ee6-b770d4852079.png)
 
 ## Self-healing (Liveness Probe)
-- book 서비스의 yml 파일에 liveness probe 설정을 바꾸어서, liveness probe가 동작함을 확인
+- book 서비스의 yml 파일에 liveness probe 설정을 바꾸어서, liveness probe 가 동작함을 확인
 
 - liveness probe 옵션을 추가하되, 서비스 포트가 아닌 8090으로 설정, readiness probe 미적용
 ```
@@ -617,7 +617,7 @@ siege -c1000 -t120S -r100 -v --content-type "application/json" 'http://system:80
             failureThreshold: 5
 ```
 
-- delivery에 liveness가 적용된 것을 확인  
+- book 서비스에 liveness가 적용된 것을 확인  
   ![2021-02-03 164738](https://user-images.githubusercontent.com/12531980/106714929-dce68600-663f-11eb-955a-6be70c5b0685.png)
 
 - book 에 liveness가 발동되었고, 8090 포트에 응답이 없기에 Restart가 발생함   
@@ -748,8 +748,8 @@ EOF
 - 설정된 Destinationrule을 확인한다.  
   ![2021-02-03 190935](https://user-images.githubusercontent.com/12531980/106732968-abc48080-6654-11eb-9684-83d152963379.png)
 
-- siege를 활용하여 User가 1명인 상황에 대해서 요청을 보낸다. (설정값 c1)
-  - siege는 같은 namespace에 생성하고, 해당 pod 안에 들어가서 siege 요청을 실행한다.
+- siege 를 활용하여 User가 1명인 상황에 대해서 요청을 보낸다. (설정값 c1)
+  - siege 는 같은 namespace 에 생성하고, 해당 pod 안에 들어가서 siege 요청을 실행한다.
 ```
 kubectl exec -it (siege POD 이름) -c siege -n istio-test-ns -- /bin/bash
 
@@ -759,12 +759,12 @@ siege -c1 -t30S -v --content-type "application/json" 'http://52.141.63.150:8080/
 - 실행결과를 확인하니, Availability가 높게 나옴을 알 수 있다.  
   ![2021-02-03 191635](https://user-images.githubusercontent.com/12531980/106733004-b717ac00-6654-11eb-8b0e-a088c49a8b71.png)
 
-- 이번에는 User가 2명인 상황에 대해서 요청을 보내고, 결과를 확인한다.  
+- 이번에는 User 가 2명인 상황에 대해서 요청을 보내고, 결과를 확인한다.  
 ```
 siege -c2 -t30S -v --content-type "application/json" 'http://52.141.63.150:8080/reserves POST {"bookNm": "apple", "userNm": "melon", "bookId":1}'
 ```
 
-- Availability가 User가 1명일 때 보다 낮게 나옴을 알 수있다. Circuit Breaker가 동작하여 대기중인 요청을 끊은 것을 알 수 있다.  
+- Availability 가 User 가 1명일 때 보다 낮게 나옴을 알 수 있다. Circuit Breaker 가 동작하여 대기중인 요청을 끊은 것을 알 수 있다.  
   ![2021-02-03 191744](https://user-images.githubusercontent.com/12531980/106733056-c1d24100-6654-11eb-9fea-4df300c98af7.png)
 
 ## 모니터링, 앨럿팅
@@ -779,9 +779,6 @@ siege -c2 -t30S -v --content-type "application/json" 'http://52.141.63.150:8080/
     트랜잭션을 추적하는 오픈소스로, 이벤트 전체를 파악하는 Tracing 툴  
   ![2021-02-03 192242](https://user-images.githubusercontent.com/12531980/106733427-36a57b00-6655-11eb-8cd4-12ae58a297dc.png)
   
-  - Grafana (istio-External-IP:3000)
-  시계열 데이터에 대한 대시보드이며, Prometheus를 통해 수집된 istio 관련 데이터를 보여줌  
-  ![image](https://user-images.githubusercontent.com/16534043/106687835-451d7380-6610-11eb-9d54-257c3eb4b866.png)
 
 
 
