@@ -779,6 +779,17 @@ siege -c2 -t30S -v --content-type "application/json" 'http://52.141.63.150:8080/
     트랜잭션을 추적하는 오픈소스로, 이벤트 전체를 파악하는 Tracing 툴  
   ![2021-02-03 192242](https://user-images.githubusercontent.com/12531980/106733427-36a57b00-6655-11eb-8cd4-12ae58a297dc.png)
   
-
+  - Grafana (istio-External-IP:3000)
+  시계열 데이터에 대한 대시보드이며, Prometheus를 통해 수집된 istio 관련 데이터를 보여줌
+  ```
+  kubectl edit svc grafana -n istio-system
+  
+  - 수정 커맨드에서 아래 명령어를 입력
+  :%s/ClusterIP/LoadBalancer/g
+  
+  - 저장하고 닫기
+  :wq!
+  ```
+  ![image](https://user-images.githubusercontent.com/16534043/106687835-451d7380-6610-11eb-9d54-257c3eb4b866.png)
 
 
